@@ -40,6 +40,7 @@ FILTER_NAME_THROTTLE = "throttle"
 FILTER_NAME_TIME_THROTTLE = "time_throttle"
 FILTER_NAME_TIME_SMA = "time_simple_moving_average"
 FILTER_NAME_KALMAN = "kalman"
+FILTER_NAME_SIMPLE = "simple"
 FILTERS = Registry()
 
 CONF_FILTERS = "filters"
@@ -74,6 +75,13 @@ FILTER_SCHEMA = vol.Schema(
 FILTER_KALMAN_SCHEMA = FILTER_SCHEMA.extend(
     {
         vol.Required(CONF_FILTER_NAME): FILTER_NAME_KALMAN,
+        vol.Optional(CONF_FILTER_SENSITIVITY,
+                 default=DEFAULT_FILTER_SENSITIVITY): vol.Coerce(float),
+})
+
+FILTER_SIMPLE_SCHEMA = FILTER_SCHEMA.extend(
+    {
+        vol.Required(CONF_FILTER_NAME): FILTER_NAME_SIMPLE,
         vol.Optional(CONF_FILTER_SENSITIVITY,
                  default=DEFAULT_FILTER_SENSITIVITY): vol.Coerce(float),
 })
@@ -155,6 +163,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                     FILTER_TIME_THROTTLE_SCHEMA,
                     FILTER_RANGE_SCHEMA,
                     FILTER_KALMAN_SCHEMA,
+                    FILTER_SIMPLE_SCHEMA,
                 )
             ],
         ),
@@ -687,4 +696,27 @@ class KalmanFilter(Filter):
                                      new_state.state,
                                      self._measurement_error))
         new_state.state = posterior.mean
+        return new_state
+
+@FILTERS.register(FILTER_NAME_SIMPLE)
+class SimpleFilter(Filter):
+    """Simple filter.
+    Applies a filter to readings.
+    Args:
+        sensitivity (float): The filter sensitivity in range 0 - 1
+    """
+
+    def __init__(self, sensitivity, precision, entity):
+        """Initialize Filter."""
+        super().__init__(FILTER_NAME_OUTLIER, 1, precision, entity)
+        self._A = None
+        self._sensitivity = sensitivity
+
+    def _filter_state(self, new_state):
+        """Implement the simple filter."""
+        if self._A is None:  # Establish the initial state.
+            self._A = new_state.state
+
+        self._A = self._A - self._sensitivity * (self._A - new_state.state)
+        new_state.state = self._A
         return new_state
