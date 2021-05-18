@@ -4,6 +4,6 @@
   "documentation": "https://github.com/vladkozlov69/HASS-kalman-filter",
   "dependencies": ["history"],
   "codeowners": ["@dgomes","@vladkozlov69"],
-  "quality_scale": "internal"
+  "quality_scale": "internal",
   "version":"0.0.1"
 }
