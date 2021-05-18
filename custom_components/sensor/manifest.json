@@ -5,4 +5,5 @@
   "dependencies": ["history"],
   "codeowners": ["@dgomes","@vladkozlov69"],
   "quality_scale": "internal"
+  "version":"0.0.1"
 }
